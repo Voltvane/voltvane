@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Voltvane</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080B0F;--bg2:#0D1117;--bg3:#121820;--bg4:#18202C;
+  --border:#1C2434;--border2:#253040;
+  --teal:#2FD9AE;--teal2:#1A6A55;--teal3:#0A2820;--teal4:rgba(47,217,174,.08);
+  --coral:#E06858;--amber:#E0A83A;--blue:#3A8EE0;
+  --text:#EDF2F8;--muted:#5A6E84;--dim:#253040;
+  --font-body:'Space Grotesk',sans-serif;
+  --font-display:'Outfit',sans-serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;-webkit-user-select:none;display:flex;flex-direction:column;background:var(--bg);font-family:var(--font-body);color:var(--text);font-size:14px}
+button{font-family:var(--font-body)}
+
+/* Canvas */
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4}
+
+/* Pages */
+.page{position:absolute;inset:0;z-index:1;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease;transform:translateY(10px)}
+.page.active{opacity:1;pointer-events:all;transform:none}
+.page.exit{opacity:0;transform:translateY(-10px);transition-duration:.2s}
+
+/* Chrome */
+.chrome{position:fixed;top:10px;right:10px;z-index:200;display:flex;gap:6px}
+.cbtn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:rgba(255,255,255,.02);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;color:var(--muted)}
+.cbtn:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.cbtn.cx:hover{background:rgba(224,104,88,.12);border-color:rgba(224,104,88,.3);color:var(--coral)}
+.cbtn svg{width:10px;height:10px}
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+#page-login{display:flex;align-items:center;justify-content:center}
+.lcard{width:400px;z-index:2;position:relative}
+
+.l-logo{text-align:center;margin-bottom:24px;margin-top:8px}
+.l-ring{width:64px;height:64px;border-radius:50%;background:var(--teal3);border:1px solid var(--teal2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 0 24px rgba(47,217,174,.12);animation:popIn .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.l-ring svg{width:26px;height:26px;filter:drop-shadow(0 0 8px rgba(47,217,174,.5))}
+.l-title{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-.02em;animation:slideUp .5s .2s ease both}
+.l-sub{font-size:13px;color:var(--muted);margin-top:4px;animation:slideUp .5s .3s ease both}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.l-status{padding:10px 14px;border-radius:9px;font-size:12.5px;margin-bottom:12px;display:none;animation:slideUp .25s ease both}
+.l-status.err{background:rgba(224,104,88,.07);border:1px solid rgba(224,104,88,.2);color:var(--coral)}
+.l-status.ok{background:var(--teal3);border:1px solid var(--teal2);color:var(--teal)}
+
+.l-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;margin-top:12px}
+.l-input{width:100%;height:44px;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font-body);font-size:13.5px;padding:0 13px;outline:none;transition:border-color .15s}
+.l-input:focus{border-color:var(--teal)}
+.l-input::placeholder{color:var(--muted)}
+
+.l-btn{width:100%;height:46px;background:var(--teal);color:#050709;font-family:var(--font-body);font-size:14px;font-weight:600;border:none;border-radius:9px;cursor:pointer;transition:all .15s;margin-top:14px;letter-spacing:.01em}
+.l-btn:hover{background:#28CBA3;transform:translateY(-1px);box-shadow:0 6px 20px rgba(47,217,174,.2)}
+.l-btn:active{transform:none;box-shadow:none}
+.l-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+
+.l-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--dim);font-size:11px}
+.l-divider::before,.l-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.l-oauth{width:100%;height:42px;background:var(--bg3);color:var(--muted);font-family:var(--font-body);font-size:13px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:7px;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 14px}
+.l-oauth:hover{border-color:var(--border2);color:var(--text);background:var(--bg4)}
+
+.l-footer{display:flex;justify-content:space-between;margin-top:14px}
+.l-link{background:none;border:none;cursor:pointer;font-family:var(--font-body);font-size:12.5px;color:var(--muted);padding:0;transition:color .15s}
+.l-link:hover{color:var(--teal)}
+.l-link.teal{color:var(--teal)}
+.l-guest{text-align:center;margin-top:10px}
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#page-app{display:flex;flex-direction:column;position:relative;height:100%;overflow:hidden}
+
+/* Titlebar */
+.tbar{height:42px;display:flex;align-items:center;padding:0 14px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg2);user-select:none}
+.tbar-logo{display:flex;align-items:center;gap:7px}
+.tbar-logo svg{width:16px;height:16px}
+.tbar-name{font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--teal)}
+.tbar-sp{flex:1}
+.tbar-right{display:flex;align-items:center;gap:10px;margin-right:72px}
+.t-email{font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-badge{padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.05em}
+.t-badge.pro{background:var(--teal3);border:1px solid var(--teal2);color:var(--teal)}
+.t-badge.free{background:var(--bg3);border:1px solid var(--border2);color:var(--muted)}
+.t-signout{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font-body);transition:color .15s;padding:4px 6px;border-radius:5px}
+.t-signout:hover{color:var(--coral);background:rgba(224,104,88,.06)}
+
+/* Body */
+.app-body{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* Sidebar */
+.sidebar{width:196px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;padding:12px 8px}
+.sidebar::-webkit-scrollbar{display:none}
+.s-section{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);padding:8px 10px 4px;margin-top:6px}
+.s-section:first-child{margin-top:0}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .15s,color .15s,border-color .15s;color:var(--muted);font-size:13px;font-weight:500;user-select:none}
+.nav:hover{background:var(--bg3);color:var(--text)}
+.nav.active{background:var(--teal3);color:var(--teal);border:1px solid var(--teal2)}
+.nav svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.nav.active svg{opacity:1}
+.nav-dot{width:5px;height:5px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.dot-safe{background:var(--teal)}
+.dot-caution{background:var(--amber)}
+.dot-advanced{background:var(--coral)}
+
+.s-tools{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
+.tool-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:all .15s;color:var(--muted);font-size:12.5px;width:100%;background:none;border:none;text-align:left;font-family:var(--font-body)}
+.tool-btn:hover{background:var(--bg3);color:var(--text)}
+.tool-btn svg{width:14px;height:14px;flex-shrink:0}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:24px 28px;-webkit-user-select:text;min-height:0}
+.main::-webkit-scrollbar{width:3px}
+.main::-webkit-scrollbar-track{background:transparent}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.panel{display:none}
+.panel.active{display:block}
+
+/* Dashboard */
+.dash-title{font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.dash-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.dash-sub strong{color:var(--teal);font-weight:500}
+
+.hw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:22px}
+.hw-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .15s}
+.hw-card:hover{border-color:var(--border2)}
+.hw-lbl{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.hw-val{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.hw-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.qa-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:24px}
+.qa{padding:9px 16px;border-radius:8px;font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.qa.primary{background:var(--teal);color:#050709;font-weight:600}
+.qa.primary:hover{background:#28CBA3;transform:translateY(-1px);box-shadow:0 4px 14px rgba(47,217,174,.2)}
+.qa.ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.qa.ghost:hover{border-color:var(--teal2);color:var(--text)}
+
+.dash-stats{font-size:12.5px;color:var(--muted)}
+.dash-stats strong{color:var(--teal)}
+
+/* Tweak panels */
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.panel-title{font-family:var(--font-display);font-size:22px;font-weight:700}
+.filter-row{display:flex;gap:5px}
+.fbtn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-family:var(--font-body);transition:all .12s}
+.fbtn.active{background:var(--teal3);border-color:var(--teal2);color:var(--teal)}
+
+/* Tweak card */
+.tc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:9px;transition:border-color .15s}
+.tc:hover{border-color:var(--border2)}
+.tc.on{border-color:var(--teal2);background:rgba(47,217,174,.025)}
+.tc-top{display:flex;align-items:flex-start;gap:12px}
+.tc-info{flex:1;min-width:0}
+.tc-name{font-size:14px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tc-desc{font-size:12.5px;color:var(--muted);line-height:1.5}
+.rbadge{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0}
+.rbadge.safe{background:rgba(47,217,174,.08);color:var(--teal);border:1px solid rgba(47,217,174,.18)}
+.rbadge.caution{background:rgba(224,168,58,.08);color:var(--amber);border:1px solid rgba(224,168,58,.18)}
+.rbadge.advanced{background:rgba(224,104,88,.08);color:var(--coral);border:1px solid rgba(224,104,88,.18)}
+.pbadge{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(47,217,174,.08);color:var(--teal);border:1px solid rgba(47,217,174,.18)}
+
+/* Toggle */
+.tog{width:40px;height:22px;border-radius:11px;background:var(--bg4);border:1.5px solid var(--border2);position:relative;cursor:pointer;transition:all .2s;flex-shrink:0;margin-top:1px}
+.tog.on{background:var(--teal);border-color:var(--teal)}
+.tog-k{width:16px;height:16px;border-radius:8px;background:#fff;position:absolute;top:1px;left:1px;transition:left .2s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog.on .tog-k{left:21px}
+.tog.locked{opacity:.35;cursor:not-allowed}
+.tog.busy{opacity:.5;pointer-events:none}
+
+/* Expand */
+.tc-expand{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:none}
+.tc-expand.open{display:block;animation:slideUp .2s ease both}
+.tc-explain{font-size:12.5px;color:var(--muted);line-height:1.65}
+.tc-warn{margin-top:9px;padding:9px 12px;background:rgba(224,168,58,.05);border:1px solid rgba(224,168,58,.15);border-radius:7px;font-size:12px;color:var(--amber)}
+.xbtn{background:none;border:none;color:var(--muted);font-size:11.5px;cursor:pointer;font-family:var(--font-body);margin-top:9px;padding:0;transition:color .12s;display:flex;align-items:center;gap:4px}
+.xbtn:hover{color:var(--teal)}
+
+/* Guide steps */
+.guide-steps{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.gs{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--muted)}
+.gs-n{width:18px;height:18px;border-radius:50%;background:var(--teal3);border:1px solid var(--teal2);color:var(--teal);font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+/* Pricing */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.pc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.pc.feat{border-color:var(--teal2);background:var(--teal4)}
+.pc-tag{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.pc-tag.t{color:var(--teal)}
+.pc-amt{font-family:var(--font-display);font-size:32px;font-weight:700;color:var(--text);margin-bottom:3px}
+.pc-sub{font-size:11.5px;color:var(--muted);margin-bottom:16px}
+.pc-btn{width:100%;padding:10px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.pc.feat .pc-btn{background:var(--teal);color:#050709;font-weight:600;border:none}
+.pc.feat .pc-btn:hover{background:#28CBA3}
+.pc-btn:hover{border-color:var(--teal2);color:var(--text)}
+
+/* Update banner */
+.ubanner{display:none;align-items:center;gap:12px;padding:11px 16px;background:var(--teal4);border:1px solid var(--teal2);border-radius:9px;margin-bottom:18px}
+.ubanner p{flex:1;font-size:12.5px;color:var(--teal)}
+.ubanner button{padding:6px 14px;background:var(--teal);color:#050709;border:none;border-radius:6px;font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer}
+
+/* Loading */
+#loading{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .3s}
+#loading.gone{opacity:0;pointer-events:none}
+.spin{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--border2);border-top-color:var(--teal);animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-txt{font-size:12.5px;color:var(--muted)}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:20px;z-index:400;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.tmsg{padding:10px 14px;border-radius:8px;font-size:13px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);animation:slideRight .25s cubic-bezier(.34,1.56,.64,1) both;min-width:180px}
+.tmsg.ok{background:var(--teal3);border-color:var(--teal2);color:var(--teal)}
+.tmsg.err{background:rgba(224,104,88,.08);border-color:rgba(224,104,88,.2);color:var(--coral)}
+@keyframes slideRight{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
+
+/* Empty state */
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+/* Selector cards */
+.sel-card{width:220px;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:28px 24px;text-align:center;cursor:pointer;transition:all .2s}
+.sel-card:hover{border-color:var(--teal2);background:var(--teal4);transform:translateY(-2px)}
+.sel-card svg{margin-bottom:16px}
+.sel-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:6px}
+.sel-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+/* FF toggle */
+.ff-row{display:flex;gap:6px;margin-bottom:20px;align-items:center}
+.ff-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-right:4px}
+.ff-btn{padding:6px 16px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;background:var(--bg3);border:1.5px solid var(--border);color:var(--muted);font-family:var(--font-body);transition:all .15s}
+.ff-btn.active{background:var(--teal3);border-color:var(--teal2);color:var(--teal);font-weight:600}
+
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+
+<!-- Chrome -->
+<div class="chrome">
+  <div class="cbtn" onclick="send('window_minimize')">
+    <svg viewBox="0 0 10 10" fill="none"><path d="M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </div>
+  <div class="cbtn cx" onclick="send('window_close')">
+    <svg viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spin"></div>
+  <div id="loading-txt">Starting Voltvane...</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══ LOGIN ══ -->
+<div class="page" id="page-login">
+  <div class="lcard">
+    <div class="l-logo">
+      <div class="l-ring">
+        <svg viewBox="0 0 26 26" fill="none">
+          <path d="M14 2L20 13H15L19 24L6 13H11L7 2Z" fill="#2FD9AE"/>
+        </svg>
+      </div>
+      <div class="l-title" id="l-title">Log in</div>
+      <div class="l-sub" id="l-sub">Welcome back. Your Pro status loads automatically.</div>
+    </div>
+
+    <div class="l-status" id="l-status"></div>
+
+    <div class="l-label">Email</div>
+    <input class="l-input" type="email" id="l-email" placeholder="you@example.com"/>
+
+    <div class="l-label" id="pass-lbl">Password</div>
+    <input class="l-input" type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()"/>
+
+    <button class="l-btn" id="l-btn" onclick="doAuth()">Log in</button>
+
+    <div class="l-divider">or</div>
+
+    <button class="l-oauth" onclick="send('oauth',{provider:'google'})">
+      <svg width="16" height="16" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <button class="l-oauth" onclick="send('oauth',{provider:'discord'})">
+      <svg width="16" height="13" viewBox="0 0 71 55" fill="none">
+        <path d="M60.1 4.9A58.5 58.5 0 0 0 45.6.7a40.7 40.7 0 0 0-1.8 3.7 54.2 54.2 0 0 0-16.2 0A39.7 39.7 0 0 0 25.8.7 58.4 58.4 0 0 0 11.2 5C1.6 19.4-1 33.4.3 47.3a59 59 0 0 0 18 9.1 44.6 44.6 0 0 0 3.8-6.3 38.3 38.3 0 0 1-6-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.5 38.5 0 0 1-6 2.9 44.4 44.4 0 0 0 3.8 6.3 58.8 58.8 0 0 0 18-9.1C72.2 31.2 68.2 17.3 60.1 4.9ZM23.7 39c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.5 0 6.4 3.2 6.3 7.2 0 4-2.8 7.2-6.3 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.5 0 6.4 3.2 6.3 7.2 0 4-2.8 7.2-6.3 7.2Z" fill="#5865F2"/>
+      </svg>
+      Continue with Discord
+    </button>
+
+    <div class="l-footer">
+      <button class="l-link" id="l-forgot" onclick="toggleForgot()">Forgot password?</button>
+      <button class="l-link teal" id="l-toggle" onclick="toggleMode()">Sign up free</button>
+    </div>
+    <div class="l-guest">
+      <button class="l-link" onclick="send('guest')" style="font-size:11.5px;color:var(--dim)">Continue as guest (free version)</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ PC/LAPTOP SELECTOR ══ -->
+<div class="page" id="page-selector">
+  <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:0;z-index:2;position:relative">
+    <div style="text-align:center;margin-bottom:40px">
+      <div class="l-ring" style="margin:0 auto 20px">
+        <svg viewBox="0 0 26 26" fill="none"><path d="M14 2L20 13H15L19 24L6 13H11L7 2Z" fill="#2FD9AE"/></svg>
+      </div>
+      <div style="font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px">What are you tuning?</div>
+      <div style="font-size:13.5px;color:var(--muted)">Voltvane shows different tweaks depending on your setup.</div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+      <div class="sel-card" onclick="chooseFF('pc')">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="8" width="40" height="28" rx="3" stroke="#2FD9AE" stroke-width="2"/>
+          <rect x="16" y="36" width="16" height="4" fill="#1A6A55"/>
+          <rect x="10" y="40" width="28" height="2" rx="1" fill="#1A6A55"/>
+          <rect x="8" y="12" width="32" height="20" rx="1" fill="#0A2820"/>
+        </svg>
+        <div class="sel-title">Desktop / PC</div>
+        <div class="sel-sub">Tower, mini-PC, or workstation. Maximum performance tweaks.</div>
+      </div>
+      <div class="sel-card" onclick="chooseFF('laptop')">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="6" width="32" height="24" rx="2" stroke="#2FD9AE" stroke-width="2"/>
+          <rect x="10" y="8" width="28" height="20" rx="1" fill="#0A2820"/>
+          <path d="M4 30h40l-4 6H8L4 30z" stroke="#2FD9AE" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="20" y="31" width="8" height="2" rx="1" fill="#1A6A55"/>
+        </svg>
+        <div class="sel-title">Laptop</div>
+        <div class="sel-sub">Battery-powered system. Balanced tweaks that protect thermals.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="page" id="page-app">
+
+  <!-- Titlebar -->
+  <div class="tbar">
+    <div class="tbar-logo">
+      <svg viewBox="0 0 16 16" fill="none">
+        <path d="M9 1.5L13 8H9.5L12 14.5L3 8H6.5L4 1.5Z" fill="#2FD9AE"/>
+      </svg>
+      <span class="tbar-name">VOLTVANE</span>
+    </div>
+    <div class="tbar-sp"></div>
+    <div class="tbar-right">
+      
+      <span class="t-badge" id="t-badge">FREE</span>
+      <button class="t-signout" onclick="send('logout')">Sign out</button>
+      
+    </div>
+  </div>
+
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="s-section">Overview</div>
+      <div class="nav active" data-p="dash" onclick="showPanel('dash',this)">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="1" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="8" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="8" y="8" width="5" height="5" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+        Dashboard
+      </div>
+
+      <div class="s-section">Tweaks</div>
+      <div class="nav" data-p="power" onclick="showPanel('power',this)">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v5M4.5 3.2A5 5 0 1 0 9.5 3.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Power
+        <span class="nav-dot dot-safe"></span>
+      </div>
+      <div class="nav" data-p="system" onclick="showPanel('system',this)">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.9 2.9l1.4 1.4M9.7 9.7l1.4 1.4M2.9 11.1l1.4-1.4M9.7 4.3l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        System
+        <span class="nav-dot dot-caution"></span>
+      </div>
+      <div class="nav" data-p="cpu" id="nav-cpu" onclick="navProCheck('cpu',this)">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5 3V1.5M7 3V1.5M9 3V1.5M5 11v1.5M7 11v1.5M9 11v1.5M3 5H1.5M3 7H1.5M3 9H1.5M11 5h1.5M11 7h1.5M11 9h1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        CPU
+        <svg id="cpu-lock" width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.5"><rect x="2.5" y="4.5" width="5" height="4" rx=".8" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 4.5V3.2a1.5 1.5 0 0 1 3 0v1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="nav" data-p="gpu" id="nav-gpu" onclick="navProCheck('gpu',this)">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2M7 3V2M10 3V2M4 11v1M7 11v1M10 11v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        GPU
+        <svg id="gpu-lock" width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.5"><rect x="2.5" y="4.5" width="5" height="4" rx=".8" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 4.5V3.2a1.5 1.5 0 0 1 3 0v1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="nav" data-p="guides" onclick="showPanel('guides',this)" id="nav-guides">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M2 2h10v10H2z" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h6M4 7h6M4 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Other Guides
+        <span class="nav-dot dot-advanced"></span>
+      </div>
+
+      <div class="s-section" id="account-section">Account</div>
+      <div class="nav" data-p="pricing" onclick="showPanel('pricing',this)" id="nav-pricing">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.5 3 3.3.5-2.4 2.3.6 3.2L7 9l-3 1.5.6-3.2L2.2 5l3.3-.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Go Pro
+      </div>
+
+      <div class="s-tools">
+        <button class="tool-btn" onclick="send('open_throttlestop')">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 1.5v6M4 5l3-3.5L10 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 9.5h10M3.5 12h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          ThrottleStop
+        </button>
+        <button class="tool-btn" onclick="send('open_afterburner')">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 2C5 4 4 6 5 8c.5 1 1.5 1.5 2 2.5.5-1 1.5-1.5 2-2.5 1-2 0-4-2-6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 10.5C5 12 5.5 13 7 13s2-1 1.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          MSI Afterburner
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main">
+      <div class="ubanner" id="ubanner">
+        <p id="utext">Update available</p>
+        <button onclick="doUpdate()">Update now</button>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="panel active" id="panel-dash">
+        <div class="dash-title" id="dash-greet">Good afternoon</div>
+        <div class="dash-sub" id="dash-sub">Your system is <strong>ready to tune</strong>.</div>
+        <div class="ff-row" style="margin-bottom:16px">
+          <span class="ff-lbl">Tuning for</span>
+          <button class="ff-btn active" data-ff="pc" onclick="setFF('pc')">Desktop / PC</button>
+          <button class="ff-btn" data-ff="laptop" onclick="setFF('laptop')">Laptop</button>
+          <span style="font-size:11.5px;color:var(--muted);margin-left:4px">— change anytime</span>
+        </div>
+        <div class="hw-grid" id="hw-grid"></div>
+        <div class="qa-row">
+          
+          <button class="qa ghost" onclick="showPanel('power',document.querySelector('[data-p=power]'))">Browse tweaks</button>
+          <button class="qa ghost" onclick="refreshApp()" title="Refresh tweaks">↻ Refresh</button>
+          <button class="qa ghost" onclick="revertAll()">Revert all tweaks</button>
+        </div>
+        <div class="dash-stats" id="dash-stats"></div>
+      </div>
+
+      <!-- Tweak panels -->
+      <div class="panel" id="panel-power">
+        <div class="panel-hdr">
+          <div class="panel-title">Power</div>
+        </div>
+        <div id="tweaks-power"></div>
+      </div>
+
+      <div class="panel" id="panel-system">
+        <div class="panel-hdr"><div class="panel-title">System</div></div>
+        <div id="tweaks-system"></div>
+      </div>
+
+      <div class="panel" id="panel-cpu">
+        <div class="panel-hdr"><div class="panel-title">CPU</div></div>
+        <div id="tweaks-cpu"></div>
+      </div>
+
+      <div class="panel" id="panel-gpu">
+        <div class="panel-hdr"><div class="panel-title">GPU</div></div>
+        <div id="tweaks-gpu"></div>
+      </div>
+
+      <div class="panel" id="panel-guides">
+        <div class="panel-hdr"><div class="panel-title">Other Guides</div></div>
+        <div id="tweaks-guides"></div>
+      </div>
+
+      <!-- Pricing -->
+      <div class="panel" id="panel-pricing">
+        <div class="panel-hdr"><div class="panel-title">Unlock Pro</div></div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:4px">ThrottleStop tuning, MSI Afterburner guide, Ultimate Performance plan, and all advanced tweaks.</p>
+        <div class="pricing-grid">
+          <div class="pc">
+            <div class="pc-tag">Monthly</div>
+            <div class="pc-amt">$4.99</div>
+            <div class="pc-sub">per month · cancel anytime</div>
+            <button class="pc-btn" onclick="send('open_url',{url:'https://voltvane.com/pricing.html'})">Get started</button>
+          </div>
+          <div class="pc feat">
+            <div class="pc-tag t">Best value</div>
+            <div class="pc-amt" style="color:var(--teal)">$45</div>
+            <div class="pc-sub">per year · save $14.88</div>
+            <button class="pc-btn" onclick="send('open_url',{url:'https://voltvane.com/pricing.html'})">Get started</button>
+          </div>
+          <div class="pc">
+            <div class="pc-tag">Lifetime</div>
+            <div class="pc-amt">$80</div>
+            <div class="pc-sub">one-time payment</div>
+            <button class="pc-btn" onclick="send('open_url',{url:'https://voltvane.com/pricing.html'})">Get started</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+
+
+</div>
+
+<script>
+// ── Particles ──
+const cv=document.getElementById('bgc'),cx2=cv.getContext('2d');
+let W,H,pts=[];
+function rsz(){W=cv.width=innerWidth;H=cv.height=innerHeight}rsz();window.addEventListener('resize',rsz);
+class P{constructor(){this.reset()}reset(){this.x=Math.random()*W;this.y=H+4;this.vx=(Math.random()-.5)*.25;this.vy=-(Math.random()*.4+.1);this.life=0;this.max=Math.random()*160+80;this.r=Math.random()+.3}}
+for(let i=0;i<30;i++){const p=new P();p.y=Math.random()*H;p.life=Math.random()*p.max;pts.push(p)}
+function draw(){cx2.clearRect(0,0,W,H);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life++;if(p.y<-4||p.life>p.max)p.reset();const a=Math.sin(p.life/p.max*Math.PI)*.3;cx2.beginPath();cx2.arc(p.x,p.y,p.r,0,Math.PI*2);cx2.fillStyle=`rgba(47,217,174,${a})`;cx2.fill()});requestAnimationFrame(draw)}
+draw();
+
+// ── State ──
+let curPage='',isSignup=false,isForgot=false,isPro=false,updateUrl='';
+
+// ── Bridge ──
+function send(a,d={}){window.chrome.webview.postMessage(JSON.stringify({action:a,...d}))}
+
+window.chrome.webview.addEventListener('message',e=>{
+  const m=JSON.parse(e.data);
+  switch(m.type){
+    case 'loading': setLoad(true,m.data.message); break;
+    case 'hide_loading': setLoad(false); showPage('login'); break;
+    case 'app_loaded': onApp(m.data); break;
+    case 'show_login':
+      setLoad(false);
+      // Reset login form completely
+      isSignup=false;isForgot=false;
+      document.getElementById('l-email').value='';
+      document.getElementById('l-pass').value='';
+      document.getElementById('l-btn').disabled=false;
+      document.getElementById('l-btn').textContent='Log in';
+      document.getElementById('l-title').textContent='Log in';
+      document.getElementById('l-sub').textContent='Welcome back. Your Pro status loads automatically.';
+      document.getElementById('l-toggle').textContent='Sign up free';
+      document.getElementById('l-forgot').textContent='Forgot password?';
+      document.getElementById('l-pass').style.display='block';
+      document.getElementById('pass-lbl').style.display='block';
+      clearStatus();
+      showPage('login');
+      break;
+    case 'auth_error': showStatus(m.data.message,'err'); resetBtn(); break;
+    case 'auth_success': showStatus(m.data.message,'ok'); resetBtn(); break;
+    case 'auth_status': showStatus(m.data.message+' Return here after logging in.','ok'); break;
+    case 'tweak_done': onTweakDone(m.data); break;
+    case 'tweak_locked': toast('Pro feature — upgrade to unlock','err'); showPanel('pricing',document.querySelector('[data-p=pricing]')); break;
+    case 'tweak_error': toast(m.data.message,'err'); break;
+    case 'all_recommended_done': toast('Recommended tweaks applied','ok'); break;
+    case 'update_available': showUpdate(m.data); break;
+    case 'error': toast(m.data.message,'err'); break;
+    case 'startup_state':
+      startupEnabled=m.data.enabled;
+      updateStartupToggle();
+      break;
+  }
+});
+
+// ── Pages ──
+function showPage(id){
+  if(curPage){const o=document.getElementById('page-'+curPage);o.classList.remove('active');o.classList.add('exit');setTimeout(()=>o.classList.remove('exit'),300)}
+  curPage=id;
+  setTimeout(()=>document.getElementById('page-'+id).classList.add('active'),40);
+}
+
+function setLoad(on,txt=''){
+  const el=document.getElementById('loading');
+  if(on){el.classList.remove('gone');document.getElementById('loading-txt').textContent=txt||'Loading...'}
+  else el.classList.add('gone');
+}
+
+// ── Login ──
+function toggleMode(){
+  isSignup=!isSignup;isForgot=false;
+  document.getElementById('l-title').textContent=isSignup?'Create account':'Log in';
+  document.getElementById('l-sub').textContent=isSignup?'Free forever. Upgrade anytime.':'Welcome back. Your Pro status loads automatically.';
+  document.getElementById('l-btn').textContent=isSignup?'Create account':'Log in';
+  document.getElementById('l-toggle').textContent=isSignup?'Log in instead':'Sign up free';
+  document.getElementById('pass-lbl').style.display=isSignup?'block':'block';
+  document.getElementById('l-pass').style.display='block';
+  document.getElementById('l-forgot').style.display=isSignup?'none':'block';
+  clearStatus();
+}
+
+function toggleForgot(){
+  isForgot=!isForgot;
+  document.getElementById('l-title').textContent=isForgot?'Reset password':'Log in';
+  document.getElementById('l-sub').textContent=isForgot?"Enter your email — we'll send a reset link.":'Welcome back. Your Pro status loads automatically.';
+  document.getElementById('l-btn').textContent=isForgot?'Send reset link':'Log in';
+  document.getElementById('l-pass').style.display=isForgot?'none':'block';
+  document.getElementById('pass-lbl').style.display=isForgot?'none':'block';
+  document.getElementById('l-forgot').textContent=isForgot?'Back to login':'Forgot password?';
+  clearStatus();
+}
+
+function doAuth(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  if(!email){showStatus('Please enter your email.','err');return}
+  if(isForgot){send('forgot_password',{email});return}
+  if(!pass){showStatus('Please enter your password.','err');return}
+  document.getElementById('l-btn').disabled=true;
+  document.getElementById('l-btn').textContent='Please wait...';
+  if(isSignup)send('signup',{email,password:pass});
+  else send('login',{email,password:pass});
+}
+
+function showStatus(msg,type){
+  const el=document.getElementById('l-status');
+  el.textContent=msg;el.className='l-status '+type;el.style.display='block';
+}
+function clearStatus(){const el=document.getElementById('l-status');el.style.display='none'}
+function resetBtn(){const b=document.getElementById('l-btn');b.disabled=false;b.textContent=isSignup?'Create account':isForgot?'Send reset link':'Log in'}
+
+// ── App loaded ──
+const CAT_MAP={
+  'Power':'power',
+  'Latency & Scheduling':'system',
+  'Visuals & Responsiveness':'system',
+  'Cleanup':'system',
+  'CPU Tuning':'cpu',
+  'GPU Tuning':'gpu',
+  'General':'system'
+};
+
+function onApp(data){
+  isPro=data.isPro;
+  // Auto-set form factor from hardware detection
+  if(data.hardware&&data.hardware.isLikelyLaptop){
+    currentFF='laptop';
+    document.querySelectorAll('.ff-btn').forEach(b=>b.classList.toggle('active',b.dataset.ff==='laptop'));
+  }
+  setLoad(false);
+
+  const em=data.email||'';
+  const se=document.getElementById('settings-email');
+  if(se)se.textContent=em.length>20?em.slice(0,18)+'…':em;
+  const b=document.getElementById('t-badge');
+  b.textContent=isPro?'PRO':'FREE';
+  b.className='t-badge '+(isPro?'pro':'free');
+  if(isPro){
+    // Hide entire account section for pro users
+    document.getElementById('nav-pricing').style.display='none';
+    document.getElementById('account-section').style.display='none';
+    // Hide lock icons on CPU/GPU tabs
+    const cpuLock=document.getElementById('cpu-lock');
+    const gpuLock=document.getElementById('gpu-lock');
+    if(cpuLock)cpuLock.style.display='none';
+    if(gpuLock)gpuLock.style.display='none';
+  }
+
+  // Greeting
+  const h=new Date().getHours();
+  document.getElementById('dash-greet').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening');
+
+  renderHW(data.hardware);
+  renderAllTweaks(data.tweaks,isPro);
+
+  // Auto-detect FF but still show selector
+  if(data.hardware&&data.hardware.isLikelyLaptop){
+    currentFF='laptop';
+    document.querySelectorAll('.ff-btn').forEach(b=>b.classList.toggle('active',b.dataset.ff==='laptop'));
+  }
+  showPage('selector');
+}
+
+function chooseFF(ff){
+  currentFF=ff;
+  document.querySelectorAll('.ff-btn').forEach(b=>b.classList.toggle('active',b.dataset.ff===ff));
+  filterAndRender(isPro);
+  showPage('app');
+}
+
+function renderHW(hw){
+  if(!hw)return;
+  const items=[
+    {l:'CPU',v:hw.cpu||'Unknown',s:''},
+    {l:'GPU',v:hw.gpu||'Unknown',s:''},
+    {l:'RAM',v:hw.ramText||'Unknown',s:''},
+    {l:'Form Factor',v:hw.isLikelyLaptop?'Laptop':'Desktop',s:hw.osName||''},
+  ];
+  document.getElementById('hw-grid').innerHTML=items.map(i=>`
+    <div class="hw-card">
+      <div class="hw-lbl">${i.l}</div>
+      <div class="hw-val">${i.v}</div>
+      ${i.s?`<div class="hw-sub">${i.s}</div>`:''}
+    </div>`).join('');
+}
+
+let allTweaks=[], currentFF='pc';
+
+function renderAllTweaks(tweaks,isPro){
+  allTweaks=tweaks||[];
+  filterAndRender(isPro);
+}
+
+function setFF(ff){
+  currentFF=ff;
+  document.querySelectorAll('.ff-btn').forEach(b=>b.classList.toggle('active',b.dataset.ff===ff));
+  filterAndRender(isPro);
+}
+
+function filterAndRender(pro){
+  // Filter tweaks by form factor
+  const filtered=allTweaks.filter(t=>{
+    if(!t||!t.id)return false;
+    if(t.target==='Both')return true;
+    if(currentFF==='pc'&&t.target==='PC')return true;
+    if(currentFF==='laptop'&&t.target==='Laptop')return true;
+    return false;
+  });
+
+  const bins={power:[],system:[],cpu:[],gpu:[],guides:[]};
+  filtered.forEach(t=>{
+    if(t.kind==='Guide'){
+      // Put CPU guides in cpu, GPU guides in gpu, rest in guides
+      if(t.category==='CPU Tuning')bins.cpu.push(t);
+      else if(t.category==='GPU Tuning')bins.gpu.push(t);
+      else bins.guides.push(t);
+      return;
+    }
+    const cat=CAT_MAP[t.category]||'system';
+    bins[cat].push(t);
+  });
+
+  // Render each bin and show/hide nav items
+  const panels=['power','system','cpu','gpu','guides'];
+  panels.forEach(k=>{
+    const el=document.getElementById('tweaks-'+k);
+    if(!el)return;
+    const list=bins[k]||[];
+    el.innerHTML=list.length?list.map(t=>renderTweak(t,pro)).join(''):'<div class="empty">No tweaks for this configuration.</div>';
+    // Show/hide sidebar nav
+    const nav=document.querySelector(`[data-p="${k}"]`);
+    if(nav)nav.style.display=list.length?'flex':'none';
+  });
+
+  const enabled=filtered.filter(t=>t&&t.isEnabled&&t.kind!=='Guide').length;
+  document.getElementById('dash-stats').innerHTML=`<strong>${enabled}</strong> tweak${enabled!==1?'s':''} active · ${filtered.filter(t=>t.kind!=='Guide').length} total available`;
+}
+
+function renderTweak(t,pro){
+  if(!t||!t.id)return'';
+  const locked=t.isPro&&!pro;
+  const risk=(t.risk||'safe').toLowerCase();
+  const hasExpand=(t.explanation||t.laptopWarning)&&!locked;
+  const isGuide=t.kind==='Guide';
+  return`<div class="tc${t.isEnabled?' on':''}" id="tc-${t.id}">
+  <div class="tc-top">
+    <div class="tc-info">
+      <div class="tc-name">
+        ${t.title||'Unknown'}
+        ${t.isPro?`<span class="pbadge">PRO</span>`:''}
+      </div>
+      <div class="tc-desc">${t.shortDescription||''}</div>
+    </div>
+    <span class="rbadge ${risk}">${t.risk||'Safe'}</span>
+    ${!isGuide?`<div class="tog${t.isEnabled?' on':''}${locked?' locked':''}" id="tog-${t.id}" onclick="${locked?`proLock()`:`togTweak('${t.id}',${!!t.isEnabled})`}">
+      <div class="tog-k"></div>
+    </div>`:''}
+  </div>
+  ${hasExpand?`
+  <button class="xbtn" onclick="xpand('${t.id}')">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Why this helps
+  </button>
+  <div class="tc-expand" id="xe-${t.id}">
+    <div class="tc-explain">${t.explanation||''}</div>
+    ${t.laptopWarning?`<div class="tc-warn">Laptop note: ${t.laptopWarning}</div>`:''}
+  </div>`:''}
+  ${locked&&!isGuide?`<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 10 10" fill="none"><rect x="2.5" y="4.5" width="5" height="4" rx=".8" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 4.5V3.2a1.5 1.5 0 0 1 3 0v1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Upgrade to Pro to unlock this tweak and see details.</div>`:''}
+  ${isGuide&&t.guideSteps&&t.guideSteps.length?`
+  <div class="guide-steps">
+    ${t.guideSteps.map((s,i)=>`<div class="gs"><div class="gs-n">${i+1}</div><div>${s}</div></div>`).join('')}
+  </div>`:''}
+</div>`;
+}
+
+function xpand(id){
+  document.getElementById('xe-'+id).classList.toggle('open');
+}
+
+function togTweak(id,cur){
+  const tog=document.getElementById('tog-'+id);
+  if(tog)tog.classList.add('busy');
+  send(cur?'revert_tweak':'apply_tweak',{id});
+}
+
+function onTweakDone(d){
+  const tog=document.getElementById('tog-'+d.id);
+  const card=document.getElementById('tc-'+d.id);
+  if(tog){tog.classList.remove('busy');tog.className='tog'+(d.enabled?' on':'');tog.innerHTML='<div class="tog-k"></div>'}
+  if(card)card.classList.toggle('on',d.enabled);
+  // Update local state
+  const t=allTweaks.find(x=>x&&x.id===d.id);
+  if(t)t.isEnabled=d.enabled;
+  updateStats();
+  toast(d.enabled?'Tweak applied':'Tweak reverted',d.enabled?'ok':'');
+}
+
+let startupEnabled = true;
+
+function toggleSettings(){
+  const overlay=document.getElementById('settings-overlay');
+  overlay.classList.toggle('open');
+  if(overlay.classList.contains('open')) send('get_startup');
+}
+function closeSettings(e){
+  if(e.target===document.getElementById('settings-overlay'))
+    document.getElementById('settings-overlay').classList.remove('open');
+}
+
+// Close settings when clicking outside
+// settings closed via overlay click
+
+function toggleStartup(){
+  startupEnabled=!startupEnabled;
+  updateStartupToggle();
+  send('set_startup',{enabled:startupEnabled});
+  toast(startupEnabled?'Voltvane will launch on startup':'Launch on startup disabled','ok');
+}
+
+function updateStartupToggle(){
+  const tog=document.getElementById('startup-tog');
+  if(!tog)return;
+  tog.classList.toggle('on',startupEnabled);
+}
+
+function resetLoginForm(){
+  // Reset button
+  const btn=document.getElementById('l-btn');
+  if(btn){btn.disabled=false;btn.textContent='Log in'}
+  // Clear status
+  clearStatus();
+  // Reset mode flags
+  isSignup=false;isForgot=false;
+  // Reset title/sub
+  document.getElementById('l-title').textContent='Log in';
+  document.getElementById('l-sub').textContent='Welcome back. Your Pro status loads automatically.';
+  document.getElementById('l-toggle').textContent='Sign up free';
+  document.getElementById('l-forgot').textContent='Forgot password?';
+  document.getElementById('l-forgot').style.display='block';
+  document.getElementById('pass-lbl').style.display='block';
+  document.getElementById('l-pass').style.display='block';
+  // Clear inputs
+  const email=document.getElementById('l-email');
+  const pass=document.getElementById('l-pass');
+  if(email)email.value='';
+  if(pass)pass.value='';
+}
+
+function refreshApp(){
+  setLoad(true,'Refreshing...');
+  send('load_app');
+}
+
+function proLock(){toast('Pro feature — upgrade to unlock','err');showPanel('pricing',document.querySelector('[data-p=pricing]'))}
+
+function navProCheck(panel, el){
+  if(!isPro){
+    toast('CPU & GPU tuning requires Pro','err');
+    showPanel('pricing',document.querySelector('[data-p=pricing]'));
+    return;
+  }
+  showPanel(panel,el);
+}
+
+function revertAll(){
+  const active=allTweaks.filter(t=>t&&t.isEnabled&&t.kind!=='Guide');
+  if(!active.length){toast('No tweaks are currently active','');return}
+  if(!confirm(`Revert ${active.length} active tweak${active.length!==1?'s':''}?`))return;
+  active.forEach(t=>{
+    send('revert_tweak',{id:t.id});
+    // Update local state immediately
+    t.isEnabled=false;
+    const tog=document.getElementById('tog-'+t.id);
+    const card=document.getElementById('tc-'+t.id);
+    if(tog){tog.className='tog';tog.innerHTML='<div class="tog-k"></div>'}
+    if(card)card.classList.remove('on');
+  });
+  // Refresh stats
+  const enabled=allTweaks.filter(t=>t&&t.isEnabled&&t.kind!=='Guide').length;
+  document.getElementById('dash-stats').innerHTML=`<strong>${enabled}</strong> tweak${enabled!==1?'s':''} active · ${allTweaks.filter(t=>t&&t.kind!=='Guide').length} total available`;
+  toast('All tweaks reverted','ok');
+}
+function applyAll(){toast('Applying recommended tweaks...','');send('apply_all_recommended',{formFactor:currentFF})}
+
+// ── Panels ──
+function showPanel(id,el){
+  // Hide all panels
+  document.querySelectorAll('.panel').forEach(p=>{
+    p.classList.remove('active');
+  });
+  // Remove active from all nav items
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  // Show selected panel
+  const p=document.getElementById('panel-'+id);
+  if(p)p.classList.add('active');
+  if(el){el.classList.add('active')}
+}
+
+function setFilter(panel,f,btn){
+  document.querySelectorAll(`#panel-${panel} .fbtn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Update ──
+let updateVersion='';
+function showUpdate(d){
+  updateUrl=d.downloadUrl||d.url||'';
+  updateVersion=d.version||'';
+  document.getElementById('utext').textContent=`Voltvane ${d.version} is available`;
+  document.getElementById('ubanner').style.display='flex';
+}
+function doUpdate(){send('do_update',{url:updateUrl,version:updateVersion})}
+
+// ── Toast ──
+function toast(msg,type=''){
+  const el=document.createElement('div');
+  el.className='tmsg'+(type?' '+type:'');
+  el.textContent=msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0'},2400);
+  setTimeout(()=>el.remove(),2800);
+}
+
+setLoad(true,'Starting Voltvane...');
+</script>
+</body>
+</html>
